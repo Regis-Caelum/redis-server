@@ -1,6 +1,11 @@
 #include "Server.h"
+#include "../Resp/RespParser.h"
+#include "../Commands/AbstractCommand.h"
+#include <iostream>
+#include <winsock2.h>
+#include <string>
 
-Server::Server(const std::string &ipAddress, u_short port) : commands(getCommands())
+Server::Server(const std::string &ipAddress, u_short port)
 {
     WSADATA wsaData;
 
@@ -69,8 +74,7 @@ void Server::listen()
             strcpy_s(ipStr, "Unknown");
         }
 
-        std::cout << "Client connected from " << ipStr
-                  << ":" << ntohs(clientAddr.sin_port) << "\n";
+        std::cout << "Client connected from " << ipStr << ":" << ntohs(clientAddr.sin_port) << "\n";
 
         char buffer[1024] = {0};
         int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
@@ -86,56 +90,21 @@ void Server::listen()
     }
 }
 
-std::vector<std::string> Server::parseRESP(const std::string &msg)
-{
-    std::vector<std::string> tokens;
-    size_t pos = 0;
-
-    while (pos < msg.size())
-    {
-        if (msg[pos] == '*') // array
-        {
-            auto next = msg.find("\r\n", pos);
-            pos = next + 2;
-        }
-        else if (msg[pos] == '$') // bulk string
-        {
-            auto lenEnd = msg.find("\r\n", pos);
-            int len = std::stoi(msg.substr(pos + 1, lenEnd - pos - 1));
-            pos = lenEnd + 2;
-            tokens.push_back(msg.substr(pos, len));
-            pos += len + 2; // skip \r\n
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    return tokens;
-}
-
 std::string Server::processCommand(const std::string &clientMessage)
 {
-    std::vector<std::string> tokens = parseRESP(clientMessage);
-    if (tokens.empty())
-        return "-Error: empty command\r\n";
+    AbstractCommand *resp = RespParser::parse(clientMessage);
+    if (!resp)
+        return "-Error: unknown command\r\n";
 
-    const std::string &cmdName = tokens[0];
-
-    for (AbstractCommand *cmd : commands)
+    if (resp->validate())
     {
-        if (cmd->name() == cmdName)
-        {
-            if (cmd->validate())
-            {
-                cmd->run();
-                return "+" + cmd->response() + "\r\n";
-            }
-            else
-                return "-" + cmd->error() + "\r\n";
-        }
+        resp->run();
+        std::string response = resp->response();
+        delete resp;
+        return "+" + response + "\r\n";
     }
 
-    return "-Error: unknown command\r\n";
+    std::string error_message = resp->error();
+    delete resp;
+    return "-" + error_message + "\r\n";
 }

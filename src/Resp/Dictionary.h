@@ -2,13 +2,14 @@
 
 #include <unordered_map>
 #include <string>
+#include <memory>
 
 struct RespObject;
 
 struct Dictionary
 {
 private:
-    std::unordered_map<std::string, RespObject *> dictionary;
+    std::unordered_map<std::string, std::unique_ptr<RespObject>> dictionary;
 
     Dictionary() {}
 
@@ -22,20 +23,9 @@ public:
         return instance;
     }
 
-    ~Dictionary()
-    {
-        for (auto &pair : dictionary)
-            delete pair.second;
-    }
-
     void set(const std::string &key, RespObject *value)
     {
-        auto it = dictionary.find(key);
-        if (it != dictionary.end())
-        {
-            delete it->second;
-        }
-        dictionary[key] = value;
+        dictionary[key] = std::unique_ptr<RespObject>(value);
     }
 
     RespObject *get(const std::string &key) const
@@ -43,7 +33,7 @@ public:
         auto it = dictionary.find(key);
         if (it != dictionary.end())
         {
-            return it->second;
+            return it->second.get();
         }
         return nullptr;
     }
@@ -53,7 +43,6 @@ public:
         auto it = dictionary.find(key);
         if (it != dictionary.end())
         {
-            delete it->second;
             dictionary.erase(it);
         }
     }

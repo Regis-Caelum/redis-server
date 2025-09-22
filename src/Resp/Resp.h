@@ -2,7 +2,8 @@
 
 #include <string>
 #include <vector>
-#include "Dictionary.h"
+
+struct Dictionary;
 
 enum RESP_TYPE
 {
@@ -27,42 +28,18 @@ struct RespObject
         ~Value() {}
     } value;
 
-    RespObject(long long int i) : resp_type(RESP_TYPE::INTEGER)
-    {
-        value.integer = i;
-    }
+    RespObject(long long int i);
+    RespObject(const std::string &s);
+    RespObject(const std::vector<RespObject> &arr);
+    RespObject(Dictionary *m);
 
-    RespObject(const std::string &s) : resp_type(RESP_TYPE::STRING)
-    {
-        new (&value.str) std::string(s);
-    }
+    RespObject(const RespObject& other);
+    RespObject& operator=(const RespObject& other);
+    RespObject(RespObject&& other) noexcept;
+    RespObject& operator=(RespObject&& other) noexcept;
+    ~RespObject();
 
-    RespObject(const std::vector<RespObject> &arr) : resp_type(RESP_TYPE::ARRAY)
-    {
-        new (&value.array) std::vector<RespObject>(arr);
-    }
-
-    RespObject(Dictionary *m) : resp_type(RESP_TYPE::MAP)
-    {
-        value.map = m;
-    }
-
-    ~RespObject()
-    {
-        switch (resp_type)
-        {
-        case RESP_TYPE::STRING:
-            value.str.~basic_string();
-            break;
-        case RESP_TYPE::ARRAY:
-            value.array.~vector();
-            break;
-        case RESP_TYPE::MAP:
-            delete value.map;
-            break;
-        case RESP_TYPE::INTEGER:
-        default:
-            break;
-        }
-    }
+private:
+    void copy(const RespObject& other);
+    void move(RespObject&& other) noexcept;
 };

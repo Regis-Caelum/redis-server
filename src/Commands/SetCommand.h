@@ -1,12 +1,12 @@
 #pragma once
 
 #include "AbstractCommand.h"
-#include "Resp/Dictionary.h"
+#include "../Resp/Dictionary.h"
+#include "../Resp/Resp.h"
 
 struct SetCommand : public AbstractCommand
 {
-    SetCommand(const std::vector<RespObject> &a)
-        : args(a) {}
+    SetCommand(const std::vector<RespObject> &a) : AbstractCommand(a) {}
 
     const std::string name() const override
     {
@@ -47,7 +47,6 @@ struct SetCommand : public AbstractCommand
         std::string key = args[1].value.str;
         std::string value = args[2].value.str;
 
-        // Use the singleton dictionary
         Dictionary::getInstance().set(key, new RespObject(value));
         respMsg = "+OK\r\n";
     }
