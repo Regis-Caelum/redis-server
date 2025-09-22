@@ -1,3 +1,0 @@
-D:/source/challanges/redis-server/build/CMakeFiles/REDIS_SERVER.dir
-D:/source/challanges/redis-server/build/CMakeFiles/edit_cache.dir
-D:/source/challanges/redis-server/build/CMakeFiles/rebuild_cache.dir

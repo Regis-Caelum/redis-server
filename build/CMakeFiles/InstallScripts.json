@@ -1,7 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"D:/source/challanges/redis-server/build/cmake_install.cmake"
-	],
-	"Parallel" : false
-}
