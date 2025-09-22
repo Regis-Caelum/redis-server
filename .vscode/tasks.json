@@ -1,0 +1,77 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "CMake: Clean (Clang + Ninja)",
+			"command": "cmake",
+			"args": [
+				"--build",
+				"build",
+				"--target",
+				"clean"
+			],
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"type": "shell",
+			"label": "CMake: Configure (Clang + Ninja)",
+			"command": "cmake",
+			"args": [
+				"-S",
+				".",
+				"-B",
+				"build",
+				"-G",
+				"Ninja",
+				"-DCMAKE_C_COMPILER=clang",
+				"-DCMAKE_CXX_COMPILER=clang++",
+				"-DCMAKE_BUILD_TYPE=Debug",
+				"-DCMAKE_MAKE_PROGRAM=C:/tools/ninja/ninja.exe"
+			],
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"type": "shell",
+			"label": "CMake: Build (Clang + Ninja)",
+			"command": "cmake",
+			"args": [
+				"--build",
+				"build"
+			],
+			"group": "build",
+			"dependsOn": "CMake: Configure (Clang + Ninja)",
+			"problemMatcher": []
+		},
+		{
+			"type": "shell",
+			"label": "CMake: Clean Rebuild All (Clang + Ninja)",
+			"dependsOn": [
+				"CMake: Clean (Clang + Ninja)",
+				"CMake: Build (Clang + Ninja)"
+			],
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"type": "shell",
+			"label": "Run Executable (Clang + Ninja)",
+			"command": "${workspaceFolder}/build/REDIS_SERVER.exe",
+			"group": "build",
+			"dependsOn": "CMake: Build (Clang + Ninja)",
+			"problemMatcher": []
+		},
+		{
+			"type": "shell",
+			"label": "Clean, Build and Run (Clang + Ninja)",
+			"dependsOn": [
+				"CMake: Clean Rebuild All (Clang + Ninja)",
+				"Run Executable (Clang + Ninja)"
+			],
+			"group": "build",
+			"problemMatcher": []
+		}
+	]
+}
