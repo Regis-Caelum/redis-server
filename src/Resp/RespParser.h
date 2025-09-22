@@ -6,7 +6,7 @@
 
 struct RespObject;
 
-class RespParser {
+struct RespParser {
 public:
     static AbstractCommand* parse(const std::string& message);
     

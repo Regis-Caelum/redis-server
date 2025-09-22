@@ -3,7 +3,7 @@
 	"tasks": [
 		{
 			"type": "shell",
-			"label": "CMake: Clean (Clang + Ninja)",
+			"label": "CMake: Clean (Visual Studio)",
 			"command": "cmake",
 			"args": [
 				"--build",
@@ -12,11 +12,11 @@
 				"clean"
 			],
 			"group": "build",
-			"problemMatcher": []
+			"problemMatcher": "$msCompile"
 		},
 		{
 			"type": "shell",
-			"label": "CMake: Configure (Clang + Ninja)",
+			"label": "CMake: Configure (Visual Studio)",
 			"command": "cmake",
 			"args": [
 				"-S",
@@ -24,54 +24,51 @@
 				"-B",
 				"build",
 				"-G",
-				"Ninja",
-				"-DCMAKE_C_COMPILER=clang",
-				"-DCMAKE_CXX_COMPILER=clang++",
-				"-DCMAKE_BUILD_TYPE=Debug",
-				"-DCMAKE_MAKE_PROGRAM=C:/tools/ninja/ninja.exe"
+				"Visual Studio 17 2022",
+				"-DCMAKE_BUILD_TYPE=Debug"
 			],
 			"group": "build",
-			"problemMatcher": []
+			"problemMatcher": "$msCompile"
 		},
 		{
 			"type": "shell",
-			"label": "CMake: Build (Clang + Ninja)",
+			"label": "CMake: Build (Visual Studio)",
 			"command": "cmake",
 			"args": [
 				"--build",
 				"build"
 			],
 			"group": "build",
-			"dependsOn": "CMake: Configure (Clang + Ninja)",
-			"problemMatcher": []
+			"dependsOn": "CMake: Configure (Visual Studio)",
+			"problemMatcher": "$msCompile"
 		},
 		{
 			"type": "shell",
-			"label": "CMake: Clean Rebuild All (Clang + Ninja)",
+			"label": "CMake: Clean Rebuild All (Visual Studio)",
 			"dependsOn": [
-				"CMake: Clean (Clang + Ninja)",
-				"CMake: Build (Clang + Ninja)"
+				"CMake: Clean (Visual Studio)",
+				"CMake: Build (Visual Studio)"
 			],
 			"group": "build",
-			"problemMatcher": []
+			"problemMatcher": "$msCompile"
 		},
 		{
 			"type": "shell",
-			"label": "Run Executable (Clang + Ninja)",
-			"command": "${workspaceFolder}/build/REDIS_SERVER.exe",
+			"label": "Run Executable (Visual Studio)",
+			"command": "${workspaceFolder}/build/Debug/REDIS_SERVER.exe",
 			"group": "build",
-			"dependsOn": "CMake: Build (Clang + Ninja)",
-			"problemMatcher": []
+			"dependsOn": "CMake: Build (Visual Studio)",
+			"problemMatcher": "$msCompile"
 		},
 		{
 			"type": "shell",
-			"label": "Clean, Build and Run (Clang + Ninja)",
+			"label": "Clean, Build and Run (Visual Studio)",
 			"dependsOn": [
-				"CMake: Clean Rebuild All (Clang + Ninja)",
-				"Run Executable (Clang + Ninja)"
+				"CMake: Clean Rebuild All (Visual Studio)",
+				"Run Executable (Visual Studio)"
 			],
 			"group": "build",
-			"problemMatcher": []
+			"problemMatcher": "$msCompile"
 		}
 	]
 }
