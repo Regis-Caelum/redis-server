@@ -1,23 +1,17 @@
 #pragma once
+
 #include <iostream>
-#include <unordered_map>
-#include <vector>
-#include <ws2tcpip.h>
-#include <stdexcept>
+#include <string>
+#include <memory>
+#include "../Network/AbstractNetworkService.h"
 
-#pragma comment(lib, "ws2_32.lib")
-
-struct Server
+class Server
 {
 private:
-    SOCKET serverSocket;
-    sockaddr_in serverAddr;
+    std::unique_ptr<AbstractNetworkService> networkService;
+    std::string process_command(const std::string &clientMessage);
 
 public:
-    Server(const std::string &ipAddress = "0.0.0.0", u_short port = 3000);
-    ~Server();
-    void listen();
-
-private:
-    std::string processCommand(const std::string &clientMessage);
+    Server(std::unique_ptr<AbstractNetworkService> service);
+    void listen_for_clients(const std::string &ipAddress, short port);
 };
