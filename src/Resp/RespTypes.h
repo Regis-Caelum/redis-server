@@ -27,8 +27,13 @@ public:
 
     ValueType value;
 
-    template <typename T>
-    RespObject(T &&val) : value(std::forward<T>(val)) {}
+    template <typename T,
+              typename = std::enable_if_t<
+                  std::is_same_v<std::decay_t<T>, std::string> ||
+                  std::is_same_v<std::decay_t<T>, long long int> ||
+                  std::is_same_v<std::decay_t<T>, std::vector<RespObject>> ||
+                  std::is_same_v<std::decay_t<T>, std::monostate>>>
+    RespObject(T &&val) : value(std::forward<T>(val)){};
 
     RespType get_type() const;
 };

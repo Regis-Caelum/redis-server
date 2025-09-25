@@ -32,10 +32,6 @@ std::string Server::process_command(const std::string &clientMessage)
     {
         return "-Error: unknown command or parsing error\r\n";
     }
-    if (command->validate())
-    {
-        command->run();
-        return "+" + command->response() + "\r\n";
-    }
-    return "-" + command->error() + "\r\n";
+
+    std::cout << static_cast<int>(command->get_type()) << std::endl;
 }

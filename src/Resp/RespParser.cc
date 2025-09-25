@@ -7,12 +7,12 @@
 // todo: parse integers, decimals, maps
 namespace
 {
-    std::pair<RespObject, std::string_view> parse_next(std::string_view message);
-    std::pair<RespObject, std::string_view> parse_array(std::string_view message);
-    std::pair<RespObject, std::string_view> parse_bulk_string(std::string_view message);
+    std::pair<std::unique_ptr<RespObject>, std::string_view> parse_next(std::string_view message);
+    std::pair<std::unique_ptr<RespObject>, std::string_view> parse_array(std::string_view message);
+    std::pair<std::unique_ptr<RespObject>, std::string_view> parse_bulk_string(std::string_view message);
 }
 
-RespObject RespParser::parse(std::string_view message)
+std::unique_ptr<RespObject> RespParser::parse(std::string_view message)
 {
     try
     {
@@ -21,18 +21,18 @@ RespObject RespParser::parse(std::string_view message)
         {
             std::cerr << "Warning: Extra data found after parsing." << std::endl;
         }
-        return parsed_object;
+        return std::move(parsed_object);
     }
     catch (const std::invalid_argument &e)
     {
         std::cerr << "Parsing error: " << e.what() << std::endl;
-        return RespObject(RespType::Null);
+        return std::make_unique<RespObject>(std::monostate{});
     }
 }
 
 namespace
 {
-    std::pair<RespObject, std::string_view> parse_next(std::string_view message)
+    std::pair<std::unique_ptr<RespObject>, std::string_view> parse_next(std::string_view message)
     {
         if (message.empty())
         {
@@ -50,7 +50,7 @@ namespace
         }
     }
 
-    std::pair<RespObject, std::string_view> parse_array(std::string_view message)
+    std::pair<std::unique_ptr<RespObject>, std::string_view> parse_array(std::string_view message)
     {
         if (message.empty() || message[0] != '*')
         {
@@ -71,15 +71,15 @@ namespace
         arr.reserve(num_args);
         for (int i = 0; i < num_args; ++i)
         {
-            auto [item, remainder] = parse_next(message);
-            arr.push_back(std::move(item));
+            auto [item_ptr, remainder] = parse_next(message);
+            arr.push_back(std::move(*item_ptr));
             message = remainder;
         }
 
-        return {RespObject(std::move(arr)), message};
+        return {std::make_unique<RespObject>(RespObject(std::move(arr))), message};
     }
 
-    std::pair<RespObject, std::string_view> parse_bulk_string(std::string_view message)
+    std::pair<std::unique_ptr<RespObject>, std::string_view> parse_bulk_string(std::string_view message)
     {
         if (message.empty() || message[0] != '$')
         {
@@ -98,7 +98,7 @@ namespace
 
         if (len == -1)
         {
-            return {RespObject(std::monostate{}), message};
+            return {std::make_unique<RespObject>(RespObject(std::monostate{})), message};
         }
 
         if (len > message.size() || message.substr(len, 2) != "\r\n")
@@ -109,6 +109,6 @@ namespace
         std::string value(message.substr(0, len));
         message.remove_prefix(len + 2);
 
-        return {RespObject(std::move(value)), message};
+        return {std::make_unique<RespObject>(RespObject(std::move(value))), message};
     }
 }
