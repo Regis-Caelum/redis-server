@@ -9,4 +9,5 @@
 namespace RespParser
 {
     std::unique_ptr<RespObject> parse(std::string_view message);
+    std::string toString(const RespObject &respObj);
 }

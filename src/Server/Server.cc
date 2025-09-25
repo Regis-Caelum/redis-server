@@ -61,7 +61,7 @@ std::string Server::process_command(const std::string &clientMessage)
     if (commandName == "PING")
     {
         command = std::make_unique<PingCommand>(cmdArgs);
-        command->execute(nullptr);
+        command->execute();
     }
     else if (commandName == "SET")
     {
