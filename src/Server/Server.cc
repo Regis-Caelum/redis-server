@@ -1,5 +1,7 @@
 #include "Server.h"
 #include "../Commands/PingCommand.h"
+#include "../Commands/SetCommand.h"
+#include "../Commands/GetCommand.h"
 #include "../Resp/RespParser.h"
 
 Server::Server(std::unique_ptr<AbstractNetworkService> service)
@@ -65,12 +67,19 @@ std::string Server::process_command(const std::string &clientMessage)
     }
     else if (commandName == "SET")
     {
-        // You would create a SetCommand here with args
+        command = std::make_unique<SetCommand>(cmdArgs);
+        command->execute();
+    }
+    else if (commandName == "GET")
+    {
+        command = std::make_unique<GetCommand>(cmdArgs);
+        command->execute();
     }
     else
     {
         return "-Error: unknown command\r\n";
     }
 
-    return "+" + std::string(command->response()) + "\r\n";
+    std::cout << command->response() << std::endl;
+    return std::string(command->response());
 }

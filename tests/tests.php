@@ -9,19 +9,35 @@ if (!$fp) {
     exit(1);
 }
 
-// Prepare RESP PING command
-// RESP for: PING
-// *1\r\n$4\r\nPING\r\n
-$pingCommand = "*1\r\n$4\r\nPING\r\n";
+// -----------------------
+// 1. Test PING
+// -----------------------
+// $pingCommand = "*1\r\n$4\r\nPING\r\n";
+// fwrite($fp, $pingCommand);
+// $response = fread($fp, 1024);
+// echo "PING response: $response\n";
 
-// Send command
-fwrite($fp, $pingCommand);
+// -----------------------
+// 2. Test SET command
+// -----------------------
+$key = "mykey";
+$value = "hello";
 
-// Read server response
+// $setCommand = "*3\r\n$3\r\nSET\r\n$" . strlen($key) . "\r\n$key\r\n$" . strlen($value) . "\r\n$value\r\n";
+// fwrite($fp, $setCommand);
+// $response = fread($fp, 1024);
+// echo "SET response: $response\n";
+
+// -----------------------
+// 3. Test GET command
+// -----------------------
+$getCommand = "*2\r\n$3\r\nGET\r\n$" . strlen($key) . "\r\n$key\r\n";
+fwrite($fp, $getCommand);
 $response = fread($fp, 1024);
+echo "GET response: $response\n";
 
-echo "Server response: $response\n";
-
+// -----------------------
 // Close connection
+// -----------------------
 fclose($fp);
 ?>

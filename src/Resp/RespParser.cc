@@ -30,11 +30,6 @@ std::unique_ptr<RespObject> RespParser::parse(std::string_view message)
     }
 }
 
-std::string RespParser::toString(const RespObject &message)
-{
-    
-}
-
 namespace
 {
     std::pair<std::unique_ptr<RespObject>, std::string_view> parse_next(std::string_view message)

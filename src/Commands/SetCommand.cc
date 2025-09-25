@@ -13,7 +13,7 @@ SetCommand::SetCommand(const std::vector<RespObject> &args)
 
 void SetCommand::execute()
 {
-    if (m_cmd_args[1].get_type() != RespType::String || m_cmd_args[1].get_type() != RespType::BulkString)
+    if (m_cmd_args[1].get_type() != RespType::String && m_cmd_args[1].get_type() != RespType::BulkString)
     {
         m_err = "-Error: SET command's key needs to be a string";
         return;
@@ -25,5 +25,5 @@ void SetCommand::execute()
     dictonary.set(key, m_cmd_args[2]);
 
     m_err = "";
-    m_resp = "";
+    m_resp = m_cmd_args[1].toString();
 }

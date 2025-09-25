@@ -1,3 +1,5 @@
+#pragma once
+
 #include "AbstractCommand.h"
 
 class PingCommand : public AbstractCommand

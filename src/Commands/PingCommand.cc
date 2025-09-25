@@ -12,6 +12,6 @@ PingCommand::PingCommand(const std::vector<RespObject> &args)
 
 void PingCommand::execute()
 {
-    m_resp = "PONG";
+    m_resp = "+PONG\r\n";
     m_err = "";
 }
