@@ -2,6 +2,7 @@
 #include "../Commands/PingCommand.h"
 #include "../Commands/SetCommand.h"
 #include "../Commands/GetCommand.h"
+#include "../Commands/QuitCommand.h"
 #include "../Resp/RespParser.h"
 
 Server::Server(std::unique_ptr<AbstractNetworkService> service)
@@ -12,19 +13,26 @@ void Server::listen_for_clients(const std::string &ipAddress, short port)
     networkService->listen(ipAddress, port);
     std::cout << "Server listening on port " << port << "...\n";
 
-    while (true)
+    if (auto client_socket = networkService->accept_client())
     {
-        if (auto client_socket = networkService->accept_client())
+        std::cout << "Client connected.\n";
+        while (true)
         {
-            std::cout << "Client connected.\n";
             std::string client_message = networkService->receive_data(*client_socket);
-            if (!client_message.empty())
+            if (client_message.empty())
             {
-                std::string response = process_command(client_message);
-                networkService->send_data(*client_socket, response);
+                std::cout << "Client disconnected.\n";
+                break;
             }
-            networkService->close_client(*client_socket);
+            std::string response = process_command(client_message);
+            networkService->send_data(*client_socket, response);
+            if (response == "-QUIT\r\n")
+            {
+                std::cout << "Client requested QUIT.\n";
+                break;
+            }
         }
+        networkService->close_client(*client_socket);
     }
 }
 
@@ -73,6 +81,11 @@ std::string Server::process_command(const std::string &clientMessage)
     else if (commandName == "GET")
     {
         command = std::make_unique<GetCommand>(cmdArgs);
+        command->execute();
+    }
+    else if (commandName == "QUIT")
+    {
+        command = std::make_unique<QuitCommand>(cmdArgs);
         command->execute();
     }
     else

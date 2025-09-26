@@ -12,10 +12,10 @@ if (!$fp) {
 // -----------------------
 // 1. Test PING
 // -----------------------
-// $pingCommand = "*1\r\n$4\r\nPING\r\n";
-// fwrite($fp, $pingCommand);
-// $response = fread($fp, 1024);
-// echo "PING response: $response\n";
+$pingCommand = "*1\r\n$4\r\nPING\r\n";
+fwrite($fp, $pingCommand);
+$response = fread($fp, 1024);
+echo "PING response: $response\n";
 
 // -----------------------
 // 2. Test SET command
@@ -23,10 +23,10 @@ if (!$fp) {
 $key = "mykey";
 $value = "hello";
 
-// $setCommand = "*3\r\n$3\r\nSET\r\n$" . strlen($key) . "\r\n$key\r\n$" . strlen($value) . "\r\n$value\r\n";
-// fwrite($fp, $setCommand);
-// $response = fread($fp, 1024);
-// echo "SET response: $response\n";
+$setCommand = "*3\r\n$3\r\nSET\r\n$" . strlen($key) . "\r\n$key\r\n$" . strlen($value) . "\r\n$value\r\n";
+fwrite($fp, $setCommand);
+$response = fread($fp, 1024);
+echo "SET response: $response\n";
 
 // -----------------------
 // 3. Test GET command
@@ -37,7 +37,15 @@ $response = fread($fp, 1024);
 echo "GET response: $response\n";
 
 // -----------------------
-// Close connection
+// 4. Test QUIT command
+// -----------------------
+$quitCommand = "*1\r\n$4\r\nQUIT\r\n";
+fwrite($fp, $quitCommand);
+$response = fread($fp, 1024);
+echo "QUIT response: $response\n";
+
+// -----------------------
+// Close connection (server should also close after QUIT)
 // -----------------------
 fclose($fp);
 ?>
