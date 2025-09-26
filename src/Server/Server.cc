@@ -15,24 +15,28 @@ void Server::listen_for_clients(const std::string &ipAddress, short port)
 
     if (auto client_socket = networkService->accept_client())
     {
+        if (!client_socket.has_value())
+        {
+            return;
+        }
         std::cout << "Client connected.\n";
         while (true)
         {
-            std::string client_message = networkService->receive_data(*client_socket);
+            std::string client_message = networkService->receive_data(client_socket.value());
             if (client_message.empty())
             {
                 std::cout << "Client disconnected.\n";
                 break;
             }
             std::string response = process_command(client_message);
-            networkService->send_data(*client_socket, response);
+            networkService->send_data(client_socket.value(), response);
             if (response == "-QUIT\r\n")
             {
                 std::cout << "Client requested QUIT.\n";
                 break;
             }
         }
-        networkService->close_client(*client_socket);
+        networkService->close_client(client_socket.value());
     }
 }
 
@@ -93,6 +97,6 @@ std::string Server::process_command(const std::string &clientMessage)
         return "-Error: unknown command\r\n";
     }
 
-    std::cout << command->response() << std::endl;
+    std::cout << commandName << ": " << command->response() << std::endl;
     return std::string(command->response());
 }
