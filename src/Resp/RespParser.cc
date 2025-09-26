@@ -3,11 +3,16 @@
 #include <iostream>
 #include <cctype>
 #include <utility>
+#include <charconv>
+#include <string_view>
+
+using namespace std::string_view_literals;
 
 // todo: parse integers, decimals, maps
 namespace
 {
     std::pair<std::unique_ptr<RespObject>, std::string_view> parse_next(std::string_view message);
+    std::pair<std::unique_ptr<RespObject>, std::string_view> parse_integer(std::string_view message);
     std::pair<std::unique_ptr<RespObject>, std::string_view> parse_array(std::string_view message);
     std::pair<std::unique_ptr<RespObject>, std::string_view> parse_bulk_string(std::string_view message);
 }
@@ -45,9 +50,40 @@ namespace
             return parse_array(message);
         case '$':
             return parse_bulk_string(message);
+        case ':':
+            return parse_integer(message);
         default:
             throw std::invalid_argument("Unknown RESP type identifier");
         }
+    }
+
+    std::pair<std::unique_ptr<RespObject>, std::string_view> parse_integer(std::string_view message)
+    {
+        if (message.empty() || message[0] != ':')
+        {
+            throw std::invalid_argument("Invalid RESP integer format");
+        }
+        message.remove_prefix(1);
+
+        size_t crlf_pos = message.find("\r\n"sv);
+        if (crlf_pos == std::string_view::npos)
+        {
+            throw std::invalid_argument("Invalid RESP integer: missing CRLF");
+        }
+
+        long long int value;
+        std::string_view integer_part = message.substr(0, crlf_pos);
+
+        auto [ptr, ec] = std::from_chars(integer_part.data(), integer_part.data() + integer_part.size(), value);
+
+        if (ec != std::errc() || ptr != integer_part.data() + integer_part.size())
+        {
+            throw std::invalid_argument("Invalid RESP integer: invalid number format");
+        }
+
+        message.remove_prefix(crlf_pos + 2);
+
+        return {std::make_unique<RespObject>(std::move(value)), message};
     }
 
     std::pair<std::unique_ptr<RespObject>, std::string_view> parse_array(std::string_view message)
@@ -58,13 +94,22 @@ namespace
         }
         message.remove_prefix(1);
 
-        size_t crlf_pos = message.find("\r\n");
+        size_t crlf_pos = message.find("\r\n"sv);
         if (crlf_pos == std::string_view::npos)
         {
             throw std::invalid_argument("Invalid RESP array: missing CRLF");
         }
 
-        int num_args = std::stoi(std::string(message.substr(0, crlf_pos)));
+        size_t num_args;
+        std::string_view count_part = message.substr(0, crlf_pos);
+
+        auto [ptr, ec] = std::from_chars(count_part.data(), count_part.data() + count_part.size(), num_args);
+
+        if (ec != std::errc() || ptr != count_part.data() + count_part.size())
+        {
+            throw std::invalid_argument("Invalid RESP array: invalid count format");
+        }
+
         message.remove_prefix(crlf_pos + 2);
 
         std::vector<RespObject> arr;
@@ -76,7 +121,7 @@ namespace
             message = remainder;
         }
 
-        return {std::make_unique<RespObject>(RespObject(std::move(arr))), message};
+        return {std::make_unique<RespObject>(std::move(arr)), message};
     }
 
     std::pair<std::unique_ptr<RespObject>, std::string_view> parse_bulk_string(std::string_view message)
@@ -87,21 +132,30 @@ namespace
         }
         message.remove_prefix(1);
 
-        size_t crlf_pos = message.find("\r\n");
+        size_t crlf_pos = message.find("\r\n"sv);
         if (crlf_pos == std::string_view::npos)
         {
             throw std::invalid_argument("Invalid bulk string: missing CRLF");
         }
 
-        int len = std::stoi(std::string(message.substr(0, crlf_pos)));
+        size_t len;
+        std::string_view len_part = message.substr(0, crlf_pos);
+
+        auto [ptr, ec] = std::from_chars(len_part.data(), len_part.data() + len_part.size(), len);
+
+        if (ec != std::errc() || ptr != len_part.data() + len_part.size())
+        {
+            throw std::invalid_argument("Invalid bulk string: invalid length format");
+        }
+
         message.remove_prefix(crlf_pos + 2);
 
         if (len == -1)
         {
-            return {std::make_unique<RespObject>(RespObject(std::monostate{})), message};
+            return {std::make_unique<RespObject>(std::monostate{}), message};
         }
 
-        if (len > message.size() || message.substr(len, 2) != "\r\n")
+        if (len > message.size() - 2 || message.substr(len, 2) != "\r\n"sv)
         {
             throw std::invalid_argument("Invalid bulk string: content too short or missing CRLF");
         }
@@ -109,6 +163,6 @@ namespace
         std::string value(message.substr(0, len));
         message.remove_prefix(len + 2);
 
-        return {std::make_unique<RespObject>(RespObject(std::move(value))), message};
+        return {std::make_unique<RespObject>(std::move(value)), message};
     }
 }
