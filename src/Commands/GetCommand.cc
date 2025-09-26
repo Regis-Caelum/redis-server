@@ -13,15 +13,26 @@ GetCommand::GetCommand(const std::vector<RespObject> &args)
 
 void GetCommand::execute()
 {
-    if (m_cmd_args[1].get_type() != RespType::String && m_cmd_args[1].get_type() != RespType::BulkString)
+    if (!m_err.empty())
+    {
+        return;
+    }
+
+    if (m_cmd_args[1].get_type() != RespType::BulkString)
     {
         m_err = "-Error: GET command's key needs to be a string";
         return;
     }
 
-    std::string_view key = std::get<std::string>(m_cmd_args[1].value);
+    std::string key = std::get<std::string>(m_cmd_args[1].value);
     Dictionary &dictonary = Dictionary::getInstance();
+    auto value = dictonary.get(key);
+    if (!value)
+    {
+        m_err = "-Error: Value not found for the key " + key + "\r\n";
+        return;
+    }
 
     m_err = "";
-    m_resp = dictonary.get(key)->toString();
+    m_resp = value->toString();
 }

@@ -13,30 +13,33 @@ void Server::listen_for_clients(const std::string &ipAddress, short port)
     networkService->listen(ipAddress, port);
     std::cout << "Server listening on port " << port << "...\n";
 
-    if (auto client_socket = networkService->accept_client())
+    while (true)
     {
-        if (!client_socket.has_value())
+        if (auto client_socket = networkService->accept_client())
         {
-            return;
-        }
-        std::cout << "Client connected.\n";
-        while (true)
-        {
-            std::string client_message = networkService->receive_data(client_socket.value());
-            if (client_message.empty())
+            if (!client_socket.has_value())
             {
-                std::cout << "Client disconnected.\n";
-                break;
+                continue;
             }
-            std::string response = process_command(client_message);
-            networkService->send_data(client_socket.value(), response);
-            if (response == "-QUIT\r\n")
+            std::cout << "Client connected.\n";
+            while (true)
             {
-                std::cout << "Client requested QUIT.\n";
-                break;
+                std::string client_message = networkService->receive_data(client_socket.value());
+                if (client_message.empty())
+                {
+                    std::cout << "Client disconnected.\n";
+                    break;
+                }
+                std::string response = process_command(client_message);
+                networkService->send_data(client_socket.value(), response);
+                if (response == "-QUIT\r\n")
+                {
+                    std::cout << "Client requested QUIT.\n";
+                    break;
+                }
             }
+            networkService->close_client(client_socket.value());
         }
-        networkService->close_client(client_socket.value());
     }
 }
 
@@ -60,7 +63,7 @@ std::string Server::process_command(const std::string &clientMessage)
         return "-Error: empty command\r\n";
     }
 
-    if (cmdArgs[0].get_type() != RespType::String)
+    if (cmdArgs[0].get_type() != RespType::BulkString)
     {
         return "-Error: command name must be a string\r\n";
     }
@@ -97,6 +100,8 @@ std::string Server::process_command(const std::string &clientMessage)
         return "-Error: unknown command\r\n";
     }
 
-    std::cout << commandName << ": " << command->response() << std::endl;
-    return std::string(command->response());
+    if (command->error().empty())
+        return std::string(command->response());
+    else
+        return std::string(command->error());
 }

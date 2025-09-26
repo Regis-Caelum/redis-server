@@ -12,6 +12,10 @@ PingCommand::PingCommand(const std::vector<RespObject> &args)
 
 void PingCommand::execute()
 {
+    if(!m_err.empty()) {
+        return;
+    }
+    
     m_resp = "+PONG\r\n";
     m_err = "";
 }

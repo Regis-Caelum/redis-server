@@ -12,6 +12,10 @@ QuitCommand::QuitCommand(const std::vector<RespObject> &args)
 
 void QuitCommand::execute()
 {
+    if(!m_err.empty()) {
+        return;
+    }
+    
     m_resp = "-QUIT\r\n";
     m_err = "";
 }

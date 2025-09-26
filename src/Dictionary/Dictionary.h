@@ -9,7 +9,7 @@
 class Dictionary
 {
 private:
-    std::unordered_map<std::string_view, std::unique_ptr<RespObject>> dictionary;
+    std::unordered_map<std::string, std::unique_ptr<RespObject>> dictionary;
 
     Dictionary() {}
 
@@ -23,12 +23,12 @@ public:
         return instance;
     }
 
-    void set(std::string_view key, RespObject value)
+    void set(std::string key, RespObject value)
     {
         dictionary[key] = std::make_unique<RespObject>(std::move(value));
     }
 
-    const RespObject *get(std::string_view key) const
+    const RespObject *get(std::string key) const
     {
         auto it = dictionary.find(key);
         if (it != dictionary.end())
@@ -38,7 +38,7 @@ public:
         return nullptr;
     }
 
-    void deleteKey(std::string_view key)
+    void deleteKey(std::string key)
     {
         auto it = dictionary.find(key);
         if (it != dictionary.end())
