@@ -68,7 +68,7 @@ std::optional<int> WindowsNetworkService::accept_client()
 
 std::string WindowsNetworkService::receive_data(int clientSocket)
 {
-    char buffer[1024] = {0};
+    char buffer[65536] = {0};
     int bytesReceived = recv(static_cast<SOCKET>(clientSocket), buffer, sizeof(buffer), 0);
     if (bytesReceived > 0)
     {

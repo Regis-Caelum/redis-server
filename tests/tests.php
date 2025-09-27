@@ -169,7 +169,7 @@ function test17_ComplexNestedStructure($fp) {
     $cmd .= "*3\r\n*2\r\n:7\r\n$3\r\nEnd\r\n$0\r\n\r\n,-42.42\r\n";
 
     // Inner map 2: {"mapKey": {"nested": [1,2,3]}, "empty": ""}
-    $cmd .= "%2\r\n+mapKey\r\n*2\r\n:1\r\n:2\r\n:3\r\n+empty\r\n$1\r\nM\r\n";
+    $cmd .= "%2\r\n+mapKey\r\n*3\r\n:1\r\n:2\r\n:3\r\n+empty\r\n$1\r\nM\r\n";
 
     sendCommand($fp, $cmd, "Test 17: Ultra-complex nested structure");
 }
@@ -179,6 +179,86 @@ function test18_GetComplexNestedStructure($fp) {
     $cmd = "*2\r\n$3\r\nGET\r\n$" . strlen($key) . "\r\n$key\r\n";
     sendCommand($fp, $cmd, "Test 18: GET ultra-complex nested structure");
 }
+
+function test19_DeepNestedArrays($fp)
+{
+    $key = "deepNestedKey";
+
+    // Outer array: ["SET", "deepNestedKey", deeply nested arrays 10 levels deep]
+    $cmd = "*3\r\n$3\r\nSET\r\n$" . strlen($key) . "\r\n$key\r\n";
+
+    // Build a 10-level nested array like [[[[...["deep", 999]...]]]]
+    $depth = 10;
+    for ($i = 0; $i < $depth; $i++) {
+        $cmd .= "*1\r\n";
+    }
+    $cmd .= "*2\r\n$4\r\ndeep\r\n:999\r\n"; // innermost
+    for ($i = 0; $i < $depth; $i++) {
+        $cmd .= "\r\n"; // close each level
+    }
+
+    sendCommand($fp, $cmd, "Test 19: Deeply nested arrays (10 levels)");
+}
+
+function test20_BigArray1000($fp)
+{
+    $key = "bigArrayKey";
+
+    // Outer array: ["SET", "bigArrayKey", array of 1000 integers]
+    $cmd = "*3\r\n$3\r\nSET\r\n$" . strlen($key) . "\r\n$key\r\n*1000\r\n";
+    for ($i = 1; $i <= 1000; $i++) {
+        $cmd .= ":" . $i . "\r\n";
+    }
+
+    sendCommand($fp, $cmd, "Test 20: Big array with 1000 integers");
+}
+
+function test21_BigMap500($fp)
+{
+    $key = "bigMapKey";
+
+    // Outer array: ["SET", "bigMapKey", map with 500 entries]
+    $cmd = "*3\r\n$3\r\nSET\r\n$" . strlen($key) . "\r\n$key\r\n%" . 500 . "\r\n";
+    for ($i = 1; $i <= 500; $i++) {
+        $field = "field" . $i;
+        $cmd .= "+" . $field . "\r\n:" . $i . "\r\n";
+    }
+
+    sendCommand($fp, $cmd, "Test 21: Big map with 500 entries");
+}
+
+function test22_MixedMonster($fp)
+{
+    $key = "monsterKey";
+
+    // Outer array: ["SET", "monsterKey", array with mixed large content]
+    $cmd = "*3\r\n$3\r\nSET\r\n$" . strlen($key) . "\r\n$key\r\n*5\r\n";
+
+    // 1. Large string
+    $bigString = str_repeat("A", 10000);
+    $cmd .= "$" . strlen($bigString) . "\r\n$bigString\r\n";
+
+    // 2. Big integer
+    $cmd .= ":999999999\r\n";
+
+    // 3. Decimal
+    $cmd .= ",123456.789\r\n";
+
+    // 4. Nested array with 100 elements
+    $cmd .= "*" . 100 . "\r\n";
+    for ($i = 0; $i < 100; $i++) {
+        $cmd .= ":" . $i . "\r\n";
+    }
+
+    // 5. Map with 10 keys
+    $cmd .= "%10\r\n";
+    for ($i = 1; $i <= 10; $i++) {
+        $cmd .= "+k$i\r\n:$i\r\n";
+    }
+
+    sendCommand($fp, $cmd, "Test 22: Mixed monster structure");
+}
+
 
 
 // -----------------------
@@ -190,23 +270,27 @@ function test6_Quit($fp) {
 // Pick which tests to run
 // -----------------------
 $testsToRun = [
-    1,
-    2,
-    3,
-    4,
-    5,
-    7,
-    8,
-    9,
-    10,
-    11,
-    12,
-    13,
-    14,
-    15,
-    16,
-    17,
-    18
+    // 1,
+    // 2,
+    // 3,
+    // 4,
+    // 5,
+    // 7,
+    // 8,
+    // 9,
+    // 10,
+    // 11,
+    // 12,
+    // 13,
+    // 14,
+    // 15,
+    // 16,
+    // 17,
+    // 18,
+    // 19,
+    20,
+    21,
+    22
 ];
 
 // Map numbers to function names
@@ -228,7 +312,11 @@ $testFunctions = [
     15 => 'test15_SimpleMap',
     16 => 'test16_GetSimpleMap',
     17 => 'test17_ComplexNestedStructure',
-    18 => 'test18_GetComplexNestedStructure'
+    18 => 'test18_GetComplexNestedStructure',
+    19 => 'test19_DeepNestedArrays',
+    20 => 'test20_BigArray1000',
+    21 => 'test21_BigMap500',
+    22 => 'test22_MixedMonster',
 ];
 
 // Execute selected tests

@@ -18,7 +18,7 @@ void GetCommand::execute()
         return;
     }
 
-    if (m_cmd_args[1].get_type() != RespType::BulkString)
+    if (m_cmd_args[1].get_type() != RespType::String && m_cmd_args[1].get_type() != RespType::BulkString)
     {
         m_err = "-Error: GET command's key needs to be a string";
         return;
