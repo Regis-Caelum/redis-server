@@ -66,6 +66,17 @@
         "stop_token": "cpp",
         "thread": "cpp",
         "variant": "cpp",
-        "set": "cpp"
+        "set": "cpp",
+        "any": "cpp",
+        "functional": "cpp",
+        "span": "cpp",
+        "sstream": "cpp",
+        "chrono": "cpp",
+        "csignal": "cpp",
+        "deque": "cpp",
+        "forward_list": "cpp",
+        "fstream": "cpp",
+        "iomanip": "cpp",
+        "unordered_set": "cpp"
     }
 }

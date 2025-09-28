@@ -33,7 +33,6 @@ std::unique_ptr<RespObject> RespParser::parse(std::string_view message)
     }
     catch (const std::invalid_argument &e)
     {
-        std::cerr << "Parsing error: " << e.what() << std::endl;
         return std::make_unique<RespObject>(std::monostate{});
     }
 }
@@ -142,6 +141,11 @@ namespace
             throw std::invalid_argument("Invalid RESP array: invalid count format");
         }
 
+        if (num_args <= 0)
+        {
+            throw std::invalid_argument("Invalid RESP array: array size must be greater than zero");
+        }
+
         message.remove_prefix(crlf_pos + 2);
 
         std::vector<RespObject> arr;
@@ -228,7 +232,7 @@ namespace
 
         message.remove_prefix(crlf_pos + 2);
 
-        if (len == -1)
+        if (len <= 0)
         {
             return {std::make_unique<RespObject>(std::monostate{}), message};
         }
@@ -243,7 +247,7 @@ namespace
 
         return {std::make_unique<RespObject>(std::move(value)), message};
     }
-    
+
     std::pair<std::unique_ptr<RespObject>, std::string_view> parse_string(std::string_view message)
     {
         if (message.empty() || message[0] != '+')

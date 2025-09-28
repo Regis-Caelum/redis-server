@@ -3,7 +3,7 @@
     "tasks": [
         {
             "type": "shell",
-            "label": "CMake: Clean (Visual Studio)",
+            "label": "CMake: Clean (Ninja)",
             "command": "cmake",
             "args": [
                 "--build",
@@ -12,11 +12,11 @@
                 "clean"
             ],
             "group": "build",
-            "problemMatcher": "$msCompile"
+            "problemMatcher": "$gcc"
         },
         {
             "type": "shell",
-            "label": "CMake: Configure (Visual Studio)",
+            "label": "CMake: Configure Server (Ninja + Clang)",
             "command": "cmake",
             "args": [
                 "-S",
@@ -24,75 +24,104 @@
                 "-B",
                 "build",
                 "-G",
-                "Visual Studio 17 2022",
-                "-DCMAKE_BUILD_TYPE=Debug"
+                "Ninja",
+                "-DCMAKE_C_COMPILER=clang",
+                "-DCMAKE_CXX_COMPILER=clang++",
+                "-DCMAKE_BUILD_TYPE=Debug",
+                "-DBUILD_TESTS=OFF"
             ],
             "group": "build",
-            "problemMatcher": "$msCompile"
+            "problemMatcher": "$gcc"
         },
         {
             "type": "shell",
-            "label": "CMake: Build (Visual Studio)",
+            "label": "CMake: Configure Tests (Ninja + Clang)",
+            "command": "cmake",
+            "args": [
+                "-S",
+                ".",
+                "-B",
+                "build",
+                "-G",
+                "Ninja",
+                "-DCMAKE_C_COMPILER=clang",
+                "-DCMAKE_CXX_COMPILER=clang++",
+                "-DCMAKE_BUILD_TYPE=Debug",
+                "-DBUILD_TESTS=ON"
+            ],
+            "group": "build",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "type": "shell",
+            "label": "CMake: Build Server (Ninja)",
             "command": "cmake",
             "args": [
                 "--build",
-                "build"
+                "build",
+                "--target",
+                "REDIS_SERVER"
             ],
             "group": "build",
-            "dependsOn": "CMake: Configure (Visual Studio)",
-            "problemMatcher": "$msCompile"
+            "dependsOn": "CMake: Configure Server (Ninja + Clang)",
+            "problemMatcher": "$gcc"
         },
         {
             "type": "shell",
-            "label": "CMake: Clean Rebuild All (Visual Studio)",
-            "dependsOn": [
-                "CMake: Clean (Visual Studio)",
-                "CMake: Build (Visual Studio)"
-            ],
-            "group": "build",
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "type": "shell",
-            "label": "Run Executable (Visual Studio)",
-            "command": "${workspaceFolder}/build/Debug/REDIS_SERVER.exe",
-            "group": "build",
-            "dependsOn": "CMake: Build (Visual Studio)",
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "type": "shell",
-            "label": "Clean, Build and Run (Visual Studio)",
-            "dependsOn": [
-                "CMake: Clean Rebuild All (Visual Studio)",
-                "Run Executable (Visual Studio)"
-            ],
-            "group": "build",
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "type": "cppbuild",
-            "label": "C/C++: clang++.exe build active file",
-            "command": "C:\\Program Files\\LLVM\\bin\\clang++.exe",
+            "label": "CMake: Build Tests (Ninja)",
+            "command": "cmake",
             "args": [
-                "-fcolor-diagnostics",
-                "-fansi-escape-codes",
-                "-g",
-                "${file}",
-                "-o",
-                "${fileDirname}\\${fileBasenameNoExtension}.exe"
+                "--build",
+                "build",
+                "--target",
+                "REDIS_TESTS"
             ],
-            "options": {
-                "cwd": "${fileDirname}"
-            },
-            "problemMatcher": [
-                "$gcc"
+            "group": "build",
+            "dependsOn": "CMake: Configure Tests (Ninja + Clang)",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "type": "shell",
+            "label": "Run Server Executable",
+            "command": "${workspaceFolder}/build/REDIS_SERVER.exe",
+            "group": "build",
+            "dependsOn": "CMake: Build Server (Ninja)",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "type": "shell",
+            "label": "Run Tests via CTest",
+            "command": "ctest",
+            "args": [
+                "--test-dir",
+                "${workspaceFolder}/build",
+                "--output-on-failure"
             ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "detail": "Task generated by Debugger."
+            "group": "test",
+            "dependsOn": "CMake: Build Tests (Ninja)",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "type": "shell",
+            "label": "Clean, Build and Run Server",
+            "dependsOn": [
+                "CMake: Clean (Ninja)",
+                "CMake: Build Server (Ninja)",
+                "Run Server Executable"
+            ],
+            "group": "build",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "type": "shell",
+            "label": "Clean, Build and Run Tests",
+            "dependsOn": [
+                "CMake: Clean (Ninja)",
+                "CMake: Build Tests (Ninja)",
+                "Run Tests Executable"
+            ],
+            "group": "build",
+            "problemMatcher": "$gcc"
         }
     ]
 }

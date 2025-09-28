@@ -18,5 +18,7 @@ public:
     std::string_view error() const;
     std::string_view response() const;
 
+    virtual ~AbstractCommand() = default;
+
     virtual void execute() = 0;
 };

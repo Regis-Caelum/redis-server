@@ -259,8 +259,6 @@ function test22_MixedMonster($fp)
     sendCommand($fp, $cmd, "Test 22: Mixed monster structure");
 }
 
-
-
 // -----------------------
 function test6_Quit($fp) {
     sendCommand($fp, "*1\r\n$4\r\nQUIT\r\n", "Test 6: QUIT");
@@ -270,24 +268,24 @@ function test6_Quit($fp) {
 // Pick which tests to run
 // -----------------------
 $testsToRun = [
-    // 1,
-    // 2,
-    // 3,
-    // 4,
-    // 5,
-    // 7,
-    // 8,
-    // 9,
-    // 10,
-    // 11,
-    // 12,
-    // 13,
-    // 14,
-    // 15,
-    // 16,
-    // 17,
-    // 18,
-    // 19,
+    1,
+    2,
+    3,
+    4,
+    5,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
     20,
     21,
     22

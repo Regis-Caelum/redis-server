@@ -5,16 +5,28 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug REDIS_SERVER (Visual Studio)",
+            "name": "Debug REDIS_SERVER (Clang + Ninja)",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/Debug/REDIS_SERVER.exe",
+            "program": "${workspaceFolder}/build/REDIS_SERVER.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "console": "integratedTerminal",
-            "preLaunchTask": "CMake: Build (Visual Studio)"
+            "preLaunchTask": "CMake: Build Server (Ninja)"
+        },
+        {
+            "name": "Debug REDIS_TESTS (Clang + Ninja)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/REDIS_TESTS.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "integratedTerminal",
+            "preLaunchTask": "CMake: Build Tests (Ninja)"
         }
     ]
 }
