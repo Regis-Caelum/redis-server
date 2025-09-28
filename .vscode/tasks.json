@@ -122,6 +122,39 @@
             ],
             "group": "build",
             "problemMatcher": "$gcc"
+        },
+        {
+            "type": "shell",
+            "label": "CMake: Configure Server Release",
+            "command": "cmake",
+            "args": [
+                "-S",
+                ".",
+                "-B",
+                "build_release",
+                "-G",
+                "Ninja",
+                "-DCMAKE_C_COMPILER=clang",
+                "-DCMAKE_CXX_COMPILER=clang++",
+                "-DCMAKE_BUILD_TYPE=Release",
+                "-DBUILD_TESTS=OFF"
+            ],
+            "group": "build",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "type": "shell",
+            "label": "CMake: Build Server Release",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "build_release",
+                "--target",
+                "REDIS_SERVER"
+            ],
+            "group": "build",
+            "dependsOn": "CMake: Configure Server Release",
+            "problemMatcher": "$gcc"
         }
     ]
 }
