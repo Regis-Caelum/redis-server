@@ -22,22 +22,16 @@ void Server::listen_for_clients(const std::string &ipAddress, short port)
                 continue;
             }
             std::cout << "Client connected.\n";
-            while (true)
+            std::string client_message = networkService->receive_data(client_socket.value());
+            if (client_message.empty())
             {
-                std::string client_message = networkService->receive_data(client_socket.value());
-                if (client_message.empty())
-                {
-                    std::cout << "Client disconnected.\n";
-                    break;
-                }
-                std::string response = process_command(client_message);
-                networkService->send_data(client_socket.value(), response);
-                if (response == "-QUIT\r\n")
-                {
-                    std::cout << "Client requested QUIT.\n";
-                    break;
-                }
+                std::cout << "Client disconnected.\n";
+                networkService->close_client(client_socket.value());
+                continue;
             }
+            std::string response = process_command(client_message);
+
+            networkService->send_data(client_socket.value(), response);
             networkService->close_client(client_socket.value());
         }
     }
