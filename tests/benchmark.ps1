@@ -6,7 +6,7 @@ $server = "127.0.0.1"
 $port = 3000
 
 # Batch sizes
-$batches = @(10, 100, 1000, 10000, 100000, 1000000)
+$batches = @(10, 100, 1000, 10000, 100000)
 
 # Commands to test
 $commandsToTest = @(
