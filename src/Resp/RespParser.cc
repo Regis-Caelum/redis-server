@@ -8,7 +8,6 @@
 
 using namespace std::string_view_literals;
 
-// todo: parse decimals, maps
 namespace
 {
     std::pair<std::unique_ptr<RespObject>, std::string_view> parse_next(std::string_view message);
