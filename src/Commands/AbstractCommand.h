@@ -2,6 +2,7 @@
 
 #include <string>
 #include <memory>
+#include <optional>
 #include "../Resp/RespTypes.h"
 
 class AbstractCommand

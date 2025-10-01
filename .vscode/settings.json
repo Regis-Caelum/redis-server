@@ -82,6 +82,7 @@
         "resumable": "cpp",
         "future": "cpp",
         "queue": "cpp",
-        "ranges": "cpp"
+        "ranges": "cpp",
+        "*.rh": "cpp"
     }
 }

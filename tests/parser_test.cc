@@ -5,13 +5,16 @@
 
 #include <gtest/gtest.h>
 #include "../src/Resp/RespParser.h"
+#include "../src/Dictionary/Dictionary.h"
+#include <thread>
 
 // Helper: assert type and cast
 template <typename T>
 T as(const RespObject &obj, RespType expected)
 {
     EXPECT_EQ(obj.get_type(), expected);
-    if (obj.get_type() != expected) {
+    if (obj.get_type() != expected)
+    {
         throw std::runtime_error("Type mismatch in RespObject");
     }
     return std::get<T>(obj.value);
@@ -140,10 +143,10 @@ TEST(RespParserTest, ParsesEmptyStringsAsMonostate)
 TEST(RespParserTest, InvalidInputsReturnMonostate)
 {
     std::vector<std::string> invalids = {
-        "*1\r\n$8\r\nPING\r\n!\r\n*\r\n",  // length mismatch
-        "*2\r\n$3\r\nFOO\r\n",             // missing second element
-        "$5\r\nhi\r\n",                     // length mismatch
-        ":abc\r\n",                         // invalid integer
+        "*1\r\n$8\r\nPING\r\n!\r\n*\r\n", // length mismatch
+        "*2\r\n$3\r\nFOO\r\n",            // missing second element
+        "$5\r\nhi\r\n",                   // length mismatch
+        ":abc\r\n",                       // invalid integer
     };
 
     for (const auto &msg : invalids)
@@ -187,47 +190,63 @@ TEST(RespParserTest, ParsesHugeMemoryHungryMessage)
     // -------------------
     // 1st element: a huge map
     // -------------------
-    oss << "%1000\r\n";  // map with 1000 key-value pairs
-    for (int i = 0; i < 1000; ++i) {
+    oss << "%1000\r\n"; // map with 1000 key-value pairs
+    for (int i = 0; i < 1000; ++i)
+    {
         std::string key = "key" + std::to_string(i);
         oss << "+" << key << "\r\n";
-        if (i % 2 == 0) {
-            oss << ":" << i << "\r\n";                  // integer value
-        } else {
+        if (i % 2 == 0)
+        {
+            oss << ":" << i << "\r\n"; // integer value
+        }
+        else
+        {
             std::string val = "val" + std::to_string(i);
-            oss << "$" << val.size() << "\r\n" << val << "\r\n";  // bulk string
+            oss << "$" << val.size() << "\r\n"
+                << val << "\r\n"; // bulk string
         }
     }
 
     // -------------------
     // 2nd element: huge array of numbers
     // -------------------
-    oss << "*10000\r\n";  // array of 10000 numbers
-    for (int i = 1; i <= 10000; ++i) {
-        if (i % 3 == 0) {
-            oss << "," << (i + 0.123) << "\r\n";      // decimal
-        } else {
-            oss << ":" << i << "\r\n";               // integer
+    oss << "*10000\r\n"; // array of 10000 numbers
+    for (int i = 1; i <= 10000; ++i)
+    {
+        if (i % 3 == 0)
+        {
+            oss << "," << (i + 0.123) << "\r\n"; // decimal
+        }
+        else
+        {
+            oss << ":" << i << "\r\n"; // integer
         }
     }
 
     // -------------------
     // 3rd element: deeply nested arrays and maps
     // -------------------
-    oss << "*100\r\n";  // 100 nested elements
-    for (int i = 0; i < 100; ++i) {
+    oss << "*100\r\n"; // 100 nested elements
+    for (int i = 0; i < 100; ++i)
+    {
         // Each element is an array of 10 maps
         oss << "*10\r\n";
-        for (int j = 0; j < 10; ++j) {
-            oss << "%5\r\n";  // map with 5 keys
-            for (int k = 0; k < 5; ++k) {
+        for (int j = 0; j < 10; ++j)
+        {
+            oss << "%5\r\n"; // map with 5 keys
+            for (int k = 0; k < 5; ++k)
+            {
                 std::string key = "n" + std::to_string(i) + "_" + std::to_string(j) + "_" + std::to_string(k);
                 oss << "+" << key << "\r\n";
-                if (k % 2 == 0) {
+                if (k % 2 == 0)
+                {
                     oss << ":" << k << "\r\n";
-                } else {
+                }
+                else
+                {
                     std::string val = "v" + std::to_string(k);
-                    oss << "$" << val.size() << "\r\n" << val << "\r\n";
+                    oss << "$" << val.size() << "\r\n"
+                        << val << "\r\n";
                 }
             }
         }
@@ -258,4 +277,23 @@ TEST(RespParserTest, ParsesHugeMemoryHungryMessage)
     ASSERT_EQ(firstNested.size(), 10);
     auto firstMap = as<std::unordered_map<std::string, RespObject>>(firstNested[0], RespType::Map);
     EXPECT_EQ(as<long long>(firstMap.at("n0_0_0"), RespType::Integer), 0);
+}
+
+TEST(RespParserTest, ParsesSetWithExpiryOption)
+{
+    Dictionary &dict = Dictionary::getInstance();
+
+    std::string key = "tempKey";
+    RespObject value = RespObject(std::string("someValue"));
+
+    dict.setWithExpiry(key, value, std::chrono::seconds(1));
+
+    auto optVal = dict.get(key);
+    ASSERT_TRUE(optVal.has_value());
+    EXPECT_EQ(std::get<std::string>(optVal->value), "someValue");
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+
+    auto expiredVal = dict.get(key);
+    EXPECT_FALSE(expiredVal.has_value());
 }

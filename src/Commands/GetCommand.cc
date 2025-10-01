@@ -34,5 +34,5 @@ void GetCommand::execute()
     }
 
     m_err = "";
-    m_resp = value->toString();
+    m_resp = value.value().toString();
 }
