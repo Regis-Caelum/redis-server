@@ -279,21 +279,95 @@ TEST(RespParserTest, ParsesHugeMemoryHungryMessage)
     EXPECT_EQ(as<long long>(firstMap.at("n0_0_0"), RespType::Integer), 0);
 }
 
-TEST(RespParserTest, ParsesSetWithExpiryOption)
+// -----------------------
+// SET command with EX expiry
+// -----------------------
+
+TEST(RespParserTest, ParsesSetWithExSeconds)
 {
+    std::string key = "tempKey1";
+    std::string value = "value1";
+    int ex = 1; // seconds
+
+    std::string msg = "*5\r\n$3\r\nSET\r\n$" + std::to_string(key.size()) + "\r\n" + key +
+                      "\r\n$" + std::to_string(value.size()) + "\r\n" + value +
+                      "\r\n$2\r\nEX\r\n$" + std::to_string(std::to_string(ex).size()) +
+                      "\r\n" + std::to_string(ex) + "\r\n";
+
+    auto result = RespParser::parse(msg);
+    ASSERT_NE(result, nullptr);
+
+    auto arr = as<std::vector<RespObject>>(*result, RespType::Array);
+    ASSERT_EQ(arr.size(), 5);
+
+    EXPECT_EQ(as<std::string>(arr[0], RespType::BulkString), "SET");
+    EXPECT_EQ(as<std::string>(arr[1], RespType::BulkString), key);
+    EXPECT_EQ(as<std::string>(arr[2], RespType::BulkString), value);
+    EXPECT_EQ(as<std::string>(arr[3], RespType::BulkString), "EX");
+    EXPECT_EQ(as<std::string>(arr[4], RespType::BulkString), std::to_string(ex));
+
+    // Actually store in Dictionary and test expiry
     Dictionary &dict = Dictionary::getInstance();
-
-    std::string key = "tempKey";
-    RespObject value = RespObject(std::string("someValue"));
-
-    dict.setWithExpiry(key, value, std::chrono::seconds(1));
+    dict.setWithExpiry(key, RespObject(value), std::chrono::seconds(ex));
 
     auto optVal = dict.get(key);
     ASSERT_TRUE(optVal.has_value());
-    EXPECT_EQ(std::get<std::string>(optVal->value), "someValue");
+    EXPECT_EQ(std::get<std::string>(optVal->value), value);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
-
+    std::this_thread::sleep_for(std::chrono::milliseconds(1100));
     auto expiredVal = dict.get(key);
     EXPECT_FALSE(expiredVal.has_value());
+}
+
+TEST(RespParserTest, ParsesSetWithExMultipleKeys)
+{
+    std::vector<std::pair<std::string, std::string>> kvPairs = {
+        {"keyA", "valA"}, {"keyB", "valB"}, {"keyC", "valC"}};
+    int ex = 2;
+
+    Dictionary &dict = Dictionary::getInstance();
+
+    for (auto &[k, v] : kvPairs)
+    {
+        std::string msg = "*5\r\n$3\r\nSET\r\n$" + std::to_string(k.size()) + "\r\n" + k +
+                          "\r\n$" + std::to_string(v.size()) + "\r\n" + v +
+                          "\r\n$2\r\nEX\r\n$" + std::to_string(std::to_string(ex).size()) +
+                          "\r\n" + std::to_string(ex) + "\r\n";
+
+        auto result = RespParser::parse(msg);
+        ASSERT_NE(result, nullptr);
+
+        dict.setWithExpiry(k, RespObject(v), std::chrono::seconds(ex));
+        auto val = dict.get(k);
+        ASSERT_TRUE(val.has_value());
+        EXPECT_EQ(std::get<std::string>(val->value), v);
+    }
+
+    // Wait for expiry
+    std::this_thread::sleep_for(std::chrono::milliseconds(2100));
+
+    for (auto &[k, _] : kvPairs)
+    {
+        auto val = dict.get(k);
+        EXPECT_FALSE(val.has_value());
+    }
+}
+
+TEST(RespParserTest, ParsesSetWithExZeroOrNegative)
+{
+    Dictionary &dict = Dictionary::getInstance();
+
+    // Zero TTL -> treat as immediate expiry
+    std::string key = "zeroTTL";
+    std::string value = "vZero";
+    dict.setWithExpiry(key, RespObject(value), std::chrono::seconds(0));
+    auto val = dict.get(key);
+    EXPECT_FALSE(val.has_value());
+
+    // Negative TTL -> treat as immediate expiry
+    key = "negTTL";
+    value = "vNeg";
+    dict.setWithExpiry(key, RespObject(value), std::chrono::seconds(-5));
+    val = dict.get(key);
+    EXPECT_FALSE(val.has_value());
 }
