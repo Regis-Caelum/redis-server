@@ -155,6 +155,17 @@
             "group": "build",
             "dependsOn": "CMake: Configure Server Release",
             "problemMatcher": "$gcc"
+        },
+        {
+            "type": "shell",
+            "label": "Run Tests Executable (with colors)",
+            "command": "${workspaceFolder}/build/REDIS_TESTS.exe",
+            "args": [
+                "--gtest_color=yes"
+            ],
+            "group": "test",
+            "dependsOn": "CMake: Build Tests (Ninja)",
+            "problemMatcher": "$gcc"
         }
     ]
 }

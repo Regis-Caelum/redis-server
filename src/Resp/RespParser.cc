@@ -36,6 +36,32 @@ std::unique_ptr<RespObject> RespParser::parse(std::string_view message)
     }
 }
 
+std::optional<std::unique_ptr<AbstractCommand>> RespParser::parseRespCommand(const std::string &message)
+{
+    auto respObj = parse(message);
+    if (!respObj || respObj->get_type() == RespType::Null || respObj->get_type() != RespType::Array)
+    {
+        return std::nullopt;
+    }
+
+    auto cmdArgs = std::get<std::vector<RespObject>>(respObj->value);
+
+    if (cmdArgs.empty() || cmdArgs[0].get_type() != RespType::BulkString)
+    {
+        return std::nullopt;
+    }
+
+    std::string commandName = std::get<std::string>(cmdArgs[0].value);
+
+    auto command = CommandBuilder::createCommand(commandName, cmdArgs);
+    if (!command)
+    {
+        return std::nullopt;
+    }
+
+    return std::move(command.value());
+}
+
 namespace
 {
     std::pair<std::unique_ptr<RespObject>, std::string_view> parse_next(std::string_view message)

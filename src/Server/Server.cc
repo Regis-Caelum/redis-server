@@ -40,63 +40,14 @@ void Server::listen_for_clients(const std::string &ipAddress, short port)
 
 std::string Server::process_command(const std::string &clientMessage)
 {
-    auto respObj = RespParser::parse(clientMessage);
-    if (!respObj)
+    std::optional<std::unique_ptr<AbstractCommand>> command = RespParser::parseRespCommand(clientMessage);
+    if (!command.has_value())
     {
         return "-Error: unknown command or parsing error\r\n";
     }
 
-    if (respObj->get_type() != RespType::Array)
-    {
-        return "-Error: invalid command format\r\n";
-    }
-
-    auto cmdArgs = std::get<std::vector<RespObject>>(respObj->value);
-
-    if (cmdArgs.empty())
-    {
-        return "-Error: empty command\r\n";
-    }
-
-    if (cmdArgs[0].get_type() != RespType::BulkString)
-    {
-        return "-Error: command name must be a string\r\n";
-    }
-
-    std::string commandName = std::get<std::string>(cmdArgs[0].value);
-    for (char &c : commandName)
-    {
-        c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
-    }
-
-    std::unique_ptr<AbstractCommand> command;
-    if (commandName == "PING")
-    {
-        command = std::make_unique<PingCommand>(cmdArgs);
-        command->execute();
-    }
-    else if (commandName == "SET")
-    {
-        command = std::make_unique<SetCommand>(cmdArgs);
-        command->execute();
-    }
-    else if (commandName == "GET")
-    {
-        command = std::make_unique<GetCommand>(cmdArgs);
-        command->execute();
-    }
-    else if (commandName == "QUIT")
-    {
-        command = std::make_unique<QuitCommand>(cmdArgs);
-        command->execute();
-    }
+    if (command.value()->error().empty())
+        return std::string(command.value()->response());
     else
-    {
-        return "-Error: unknown command\r\n";
-    }
-
-    if (command->error().empty())
-        return std::string(command->response());
-    else
-        return std::string(command->error());
+        return std::string(command.value()->error());
 }
