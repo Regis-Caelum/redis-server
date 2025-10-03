@@ -12,6 +12,7 @@ namespace
 {
     std::pair<std::unique_ptr<RespObject>, std::string_view> parse_next(std::string_view message);
     std::pair<std::unique_ptr<RespObject>, std::string_view> parse_integer(std::string_view message);
+    std::pair<std::unique_ptr<RespObject>, std::string_view> parse_boolean(std::string_view message);
     std::pair<std::unique_ptr<RespObject>, std::string_view> parse_decimal(std::string_view message);
     std::pair<std::unique_ptr<RespObject>, std::string_view> parse_map(std::string_view message);
     std::pair<std::unique_ptr<RespObject>, std::string_view> parse_array(std::string_view message);
@@ -85,6 +86,8 @@ namespace
             return parse_decimal(message);
         case '%':
             return parse_map(message);
+        case '#':
+            return parse_boolean(message);
         default:
             throw std::invalid_argument("Unknown RESP type identifier");
         }
@@ -112,6 +115,40 @@ namespace
         if (ec != std::errc() || ptr != integer_part.data() + integer_part.size())
         {
             throw std::invalid_argument("Invalid RESP integer: invalid number format");
+        }
+
+        message.remove_prefix(crlf_pos + 2);
+
+        return {std::make_unique<RespObject>(std::move(value)), message};
+    }
+
+    std::pair<std::unique_ptr<RespObject>, std::string_view> parse_boolean(std::string_view message)
+    {
+        if (message.empty() || message[0] != '#')
+        {
+            throw std::invalid_argument("Invalid RESP boolean format");
+        }
+        message.remove_prefix(1);
+
+        size_t crlf_pos = message.find("\r\n"sv);
+        if (crlf_pos == std::string_view::npos)
+        {
+            throw std::invalid_argument("Invalid RESP boolean: missing CRLF");
+        }
+
+        std::string_view bool_part = message.substr(0, crlf_pos);
+        bool value;
+        if (bool_part == "t")
+        {
+            value = true;
+        }
+        else if (bool_part == "f")
+        {
+            value = false;
+        }
+        else
+        {
+            throw std::invalid_argument("Invalid RESP boolean: must be 't' or 'f'");
         }
 
         message.remove_prefix(crlf_pos + 2);

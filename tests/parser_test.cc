@@ -371,3 +371,76 @@ TEST(RespParserTest, ParsesSetWithExZeroOrNegative)
     val = dict.get(key);
     EXPECT_FALSE(val.has_value());
 }
+
+TEST(RespParserTest, ParsesExistsWithValidKey)
+{
+    Dictionary &dict = Dictionary::getInstance();
+
+    std::string key = "foo";
+    RespObject value(std::string("bar"));
+    dict.set(key, value);
+
+    std::vector<RespObject> args = {
+        RespObject(std::string("EXISTS")),
+        RespObject(key)};
+    ExistsCommand cmd(args);
+    cmd.execute();
+
+    EXPECT_TRUE(cmd.error().empty());
+    EXPECT_EQ(cmd.response(), "#t\r\n");
+}
+
+TEST(RespParserTest, ParsesExistsWithMissingKey)
+{
+    Dictionary &dict = Dictionary::getInstance();
+
+    std::vector<RespObject> args = {
+        RespObject(std::string("EXISTS")),
+        RespObject(std::string("doesNotExist"))};
+    ExistsCommand cmd(args);
+    cmd.execute();
+
+    EXPECT_TRUE(cmd.error().empty());
+    EXPECT_EQ(cmd.response(), "#f\r\n");
+}
+
+TEST(RespParserTest, ParsesExistsWithWrongArgCount)
+{
+    std::vector<RespObject> args = {
+        RespObject(std::string("EXISTS"))};
+    ExistsCommand cmd(args);
+    cmd.execute();
+
+    EXPECT_FALSE(cmd.error().empty());
+    EXPECT_TRUE(cmd.response().empty());
+}
+
+TEST(RespParserTest, ParsesExistsWithNonStringKey)
+{
+    Dictionary &dict = Dictionary::getInstance();
+
+    RespObject intKey(42LL); // invalid type
+    std::vector<RespObject> args = {
+        RespObject(std::string("EXISTS")),
+        intKey};
+    ExistsCommand cmd(args);
+    cmd.execute();
+
+    EXPECT_FALSE(cmd.error().empty());
+    EXPECT_TRUE(cmd.response().empty());
+}
+
+TEST(RespParserTest, ParsesBooleanValues)
+{
+    RespObject trueObj(true);
+    RespObject falseObj(false);
+
+    ASSERT_EQ(trueObj.get_type(), RespType::Boolean);
+    ASSERT_EQ(falseObj.get_type(), RespType::Boolean);
+
+    EXPECT_TRUE(as<bool>(trueObj, RespType::Boolean));
+    EXPECT_FALSE(as<bool>(falseObj, RespType::Boolean));
+
+    RespObject invalid(std::string("notABool"));
+    EXPECT_NE(invalid.get_type(), RespType::Boolean);
+}

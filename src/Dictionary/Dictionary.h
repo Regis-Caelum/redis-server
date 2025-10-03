@@ -22,16 +22,16 @@ private:
     Dictionary() {}
 
 public:
-    inline Dictionary(const Dictionary &) = delete;
-    inline Dictionary &operator=(const Dictionary &) = delete;
+    Dictionary(const Dictionary &) = delete;
+    Dictionary &operator=(const Dictionary &) = delete;
 
-    inline static Dictionary &getInstance()
+    static Dictionary &getInstance()
     {
         static Dictionary instance;
         return instance;
     }
 
-    inline void set(std::string key, RespObject value)
+    void set(std::string key, RespObject value)
     {
         auto entry = std::make_unique<Entry>();
         entry->value = std::make_unique<RespObject>(std::move(value));
@@ -39,7 +39,7 @@ public:
         dictionary[key] = std::move(entry);
     }
 
-    inline void setWithExpiry(std::string key, RespObject value, std::chrono::seconds ttl)
+    void setWithExpiry(std::string key, RespObject value, std::chrono::seconds ttl)
     {
         auto entry = std::make_unique<Entry>();
         entry->value = std::make_unique<RespObject>(std::move(value));
@@ -47,7 +47,7 @@ public:
         dictionary[key] = std::move(entry);
     }
 
-    inline const std::optional<RespObject> get(std::string key) const
+    std::optional<RespObject> get(std::string key) const
     {
         auto it = dictionary.find(key);
         if (it != dictionary.end())
@@ -61,12 +61,17 @@ public:
         return std::nullopt;
     }
 
-    inline void deleteKey(std::string key)
+    void deleteKey(std::string key)
     {
         auto it = dictionary.find(key);
         if (it != dictionary.end())
         {
             dictionary.erase(it);
         }
+    }
+
+    void clear()
+    {
+        dictionary.clear();
     }
 };

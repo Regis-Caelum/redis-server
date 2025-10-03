@@ -15,6 +15,7 @@ enum class RespType
     String,
     Integer,
     Decimal,
+    Boolean,
     BulkString,
     Null
 };
@@ -25,6 +26,7 @@ public:
     using ValueType = std::variant<
         std::string,
         long long int,
+        bool,
         long double,
         std::vector<RespObject>,
         std::unordered_map<std::string, RespObject>,
@@ -35,6 +37,7 @@ public:
     template <typename T,
               typename = std::enable_if_t<
                   std::is_same_v<std::decay_t<T>, std::string> ||
+                  std::is_same_v<std::decay_t<T>, bool> ||
                   std::is_same_v<std::decay_t<T>, long long int> ||
                   std::is_same_v<std::decay_t<T>, long double> ||
                   std::is_same_v<std::decay_t<T>, std::vector<RespObject>> ||
@@ -55,6 +58,10 @@ inline RespType RespObject::get_type() const
     else if (std::holds_alternative<std::unordered_map<std::string, RespObject>>(value))
     {
         return RespType::Map;
+    }
+    else if (std::holds_alternative<bool>(value))
+    {
+        return RespType::Boolean;
     }
     else if (std::holds_alternative<long long int>(value))
     {
@@ -97,6 +104,12 @@ inline std::string RespObject::toString() const
         size_t len = val.length();
         message += "$" + std::to_string(len) + "\r\n";
         message += val + "\r\n";
+        break;
+    }
+    case RespType::Boolean:
+    {
+        bool val = std::get<bool>(this->value);
+        message += "#" + std::string(val ? "t" : "f") + "\r\n";
         break;
     }
     case RespType::Integer:

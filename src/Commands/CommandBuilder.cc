@@ -5,4 +5,5 @@ const std::unordered_map<std::string, CommandBuilder::CommandCreator> CommandBui
     {"SET", createSetCommand},
     {"GET", createGetCommand},
     {"QUIT", createQuitCommand},
+    {"EXISTS", createExistsCommand},
 };
