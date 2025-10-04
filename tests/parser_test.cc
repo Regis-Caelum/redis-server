@@ -444,3 +444,95 @@ TEST(RespParserTest, ParsesBooleanValues)
     RespObject invalid(std::string("notABool"));
     EXPECT_NE(invalid.get_type(), RespType::Boolean);
 }
+
+TEST(RespParserDelTest, ParsesDelSingleKey)
+{
+    std::string msg = "*2\r\n$3\r\nDEL\r\n$3\r\nkey\r\n";
+    auto result = RespParser::parse(msg);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->get_type(), RespType::Array);
+
+    auto arr = std::get<std::vector<RespObject>>(result->value);
+    ASSERT_EQ(arr.size(), 2u);
+
+    EXPECT_EQ(arr[0].get_type(), RespType::BulkString);
+    EXPECT_EQ(std::get<std::string>(arr[0].value), "DEL");
+
+    EXPECT_EQ(arr[1].get_type(), RespType::BulkString);
+    EXPECT_EQ(std::get<std::string>(arr[1].value), "key");
+}
+
+TEST(RespParserDelTest, ParsesDelMultipleKeys)
+{
+    std::string msg =
+        "*3\r\n"
+        "$3\r\nDEL\r\n"
+        "$1\r\na\r\n"
+        "$1\r\nb\r\n";
+    auto result = RespParser::parse(msg);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->get_type(), RespType::Array);
+
+    auto arr = std::get<std::vector<RespObject>>(result->value);
+    ASSERT_EQ(arr.size(), 3u);
+
+    EXPECT_EQ(arr[0].get_type(), RespType::BulkString);
+    EXPECT_EQ(std::get<std::string>(arr[0].value), "DEL");
+
+    EXPECT_EQ(arr[1].get_type(), RespType::BulkString);
+    EXPECT_EQ(std::get<std::string>(arr[1].value), "a");
+
+    EXPECT_EQ(arr[2].get_type(), RespType::BulkString);
+    EXPECT_EQ(std::get<std::string>(arr[2].value), "b");
+}
+
+TEST(RespParserDelTest, ParsesDelWithIntegerKey)
+{
+    // second element is an integer (:42) — parser should produce an Integer RespObject
+    std::string msg =
+        "*2\r\n"
+        "$3\r\nDEL\r\n"
+        ":42\r\n";
+    auto result = RespParser::parse(msg);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->get_type(), RespType::Array);
+
+    auto arr = std::get<std::vector<RespObject>>(result->value);
+    ASSERT_EQ(arr.size(), 2u);
+
+    EXPECT_EQ(arr[0].get_type(), RespType::BulkString);
+    EXPECT_EQ(std::get<std::string>(arr[0].value), "DEL");
+
+    EXPECT_EQ(arr[1].get_type(), RespType::Integer);
+    EXPECT_EQ(std::get<long long>(arr[1].value), 42LL);
+}
+
+TEST(RespParserDelTest, ParsesDelWithEmptyKey)
+{
+    // empty bulk string as key
+    std::string msg =
+        "*2\r\n"
+        "$3\r\nDEL\r\n"
+        "$0\r\n\r\n";
+    auto result = RespParser::parse(msg);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->get_type(), RespType::Array);
+
+    auto arr = std::get<std::vector<RespObject>>(result->value);
+    ASSERT_EQ(arr.size(), 2u);
+
+    EXPECT_EQ(arr[1].get_type(), RespType::Null);
+}
+
+TEST(RespParserDelTest, MalformedDelReturnsMonostate)
+{
+    // length mismatch for second bulk string (declares 4 but provides 3 chars) -> invalid
+    std::string msg =
+        "*2\r\n"
+        "$3\r\nDEL\r\n"
+        "$4\r\nkey\r\n";
+    auto result = RespParser::parse(msg);
+    // Parser should return an object (not null) but with monostate for invalid input
+    ASSERT_NE(result, nullptr);
+    EXPECT_TRUE(std::holds_alternative<std::monostate>(result->value));
+}

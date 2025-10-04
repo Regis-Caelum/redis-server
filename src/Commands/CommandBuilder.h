@@ -3,6 +3,7 @@
 #include "PingCommand.h"
 #include "QuitCommand.h"
 #include "ExistsCommand.h"
+#include "DeleteCommand.h"
 
 #include <unordered_map>
 #include <memory>
@@ -39,6 +40,11 @@ private:
     static std::unique_ptr<AbstractCommand> createExistsCommand(const std::vector<RespObject> &args)
     {
         return std::make_unique<ExistsCommand>(args);
+    }
+
+    static std::unique_ptr<AbstractCommand> createDeleteCommand(const std::vector<RespObject> &args)
+    {
+        return std::make_unique<DeleteCommand>(args);
     }
 
 public:
