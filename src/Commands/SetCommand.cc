@@ -60,8 +60,9 @@ void SetCommand::execute()
         }
     }
 
+    Entry entry(std::make_unique<RespObject>(value), std::nullopt);
     dictonary.set(key, value);
 
     m_err = "";
-    m_resp = key;
+    m_resp = "+OK\r\n";
 }

@@ -26,13 +26,13 @@ void GetCommand::execute()
 
     std::string key = std::get<std::string>(m_cmd_args[1].value);
     Dictionary &dictonary = Dictionary::getInstance();
-    auto value = dictonary.get(key);
-    if (!value)
+    auto optional = dictonary.get(key);
+    if (!optional.has_value())
     {
         m_err = "-Error: Value not found for the key " + key + "\r\n";
         return;
     }
 
     m_err = "";
-    m_resp = value.value().toString();
+    m_resp = optional.value().respObj->toString();
 }

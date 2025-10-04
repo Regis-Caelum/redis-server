@@ -4,6 +4,8 @@
 #include "QuitCommand.h"
 #include "ExistsCommand.h"
 #include "DeleteCommand.h"
+#include "IncrementCommand.h"
+#include "DecrementCommand.h"
 
 #include <unordered_map>
 #include <memory>
@@ -45,6 +47,16 @@ private:
     static std::unique_ptr<AbstractCommand> createDeleteCommand(const std::vector<RespObject> &args)
     {
         return std::make_unique<DeleteCommand>(args);
+    }
+
+    static std::unique_ptr<AbstractCommand> createIncrementCommand(const std::vector<RespObject> &args)
+    {
+        return std::make_unique<IncrementCommand>(args);
+    }
+
+    static std::unique_ptr<AbstractCommand> createDecrementCommand(const std::vector<RespObject> &args)
+    {
+        return std::make_unique<DecrementCommand>(args);
     }
 
 public:

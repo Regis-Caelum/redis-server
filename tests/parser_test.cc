@@ -312,7 +312,7 @@ TEST(RespParserTest, ParsesSetWithExSeconds)
 
     auto optVal = dict.get(key);
     ASSERT_TRUE(optVal.has_value());
-    EXPECT_EQ(std::get<std::string>(optVal->value), value);
+    EXPECT_EQ(std::get<std::string>(optVal.value().respObj->value), value);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(1100));
     auto expiredVal = dict.get(key);
@@ -340,7 +340,7 @@ TEST(RespParserTest, ParsesSetWithExMultipleKeys)
         dict.setWithExpiry(k, RespObject(v), std::chrono::seconds(ex));
         auto val = dict.get(k);
         ASSERT_TRUE(val.has_value());
-        EXPECT_EQ(std::get<std::string>(val->value), v);
+        EXPECT_EQ(std::get<std::string>(val.value().respObj->value), v);
     }
 
     // Wait for expiry
@@ -534,5 +534,112 @@ TEST(RespParserDelTest, MalformedDelReturnsMonostate)
     auto result = RespParser::parse(msg);
     // Parser should return an object (not null) but with monostate for invalid input
     ASSERT_NE(result, nullptr);
+    EXPECT_TRUE(std::holds_alternative<std::monostate>(result->value));
+}
+
+TEST(RespParserIncrTest, ParsesIncrWithValidKey)
+{
+    std::string key = "counter";
+    std::string msg =
+        "*2\r\n"
+        "$3\r\nINC\r\n"
+        "$" +
+        std::to_string(key.size()) + "\r\n" + key + "\r\n";
+
+    auto result = RespParser::parse(msg);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->get_type(), RespType::Array);
+
+    auto arr = std::get<std::vector<RespObject>>(result->value);
+    ASSERT_EQ(arr.size(), 2u);
+
+    EXPECT_EQ(arr[0].get_type(), RespType::BulkString);
+    EXPECT_EQ(std::get<std::string>(arr[0].value), "INC");
+
+    EXPECT_EQ(arr[1].get_type(), RespType::BulkString);
+    EXPECT_EQ(std::get<std::string>(arr[1].value), key);
+}
+
+TEST(RespParserIncrTest, ParsesIncrWithEmptyKey)
+{
+    // empty bulk string for key
+    std::string msg =
+        "*2\r\n"
+        "$3\r\nINC\r\n"
+        "$0\r\n\r\n";
+
+    auto result = RespParser::parse(msg);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->get_type(), RespType::Array);
+
+    auto arr = std::get<std::vector<RespObject>>(result->value);
+    ASSERT_EQ(arr.size(), 2u);
+
+    // key should be Null
+    EXPECT_EQ(arr[1].get_type(), RespType::Null);
+}
+
+TEST(RespParserIncrTest, MalformedIncrReturnsMonostate)
+{
+    // length mismatch for key (says length 5 but actually provides 4)
+    std::string msg =
+        "*2\r\n"
+        "$3\r\nINC\r\n"
+        "$5\r\nkey1\r\n";
+
+    auto result = RespParser::parse(msg);
+    ASSERT_NE(result, nullptr);
+
+    // Parser should produce monostate for malformed input
+    EXPECT_TRUE(std::holds_alternative<std::monostate>(result->value));
+}
+
+TEST(RespParserIncrTest, ParsesIncrWithWrongArgCount)
+{
+    // Only command name, no key
+    std::string msg =
+        "*1\r\n"
+        "$3\r\nINC\r\n";
+
+    auto result = RespParser::parse(msg);
+    ASSERT_NE(result, nullptr);
+
+    auto arr = std::get<std::vector<RespObject>>(result->value);
+    // Only one element
+    ASSERT_EQ(arr.size(), 1u);
+
+    EXPECT_EQ(std::get<std::string>(arr[0].value), "INC");
+}
+
+TEST(RespParserDecrTest, ParsesDecrWithEmptyKey)
+{
+    // empty bulk string as key
+    std::string msg =
+        "*2\r\n"
+        "$4\r\nDECR\r\n"
+        "$0\r\n\r\n";
+
+    auto result = RespParser::parse(msg);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->get_type(), RespType::Array);
+
+    auto arr = std::get<std::vector<RespObject>>(result->value);
+    ASSERT_EQ(arr.size(), 2u);
+
+    EXPECT_EQ(arr[1].get_type(), RespType::Null);
+}
+
+TEST(RespParserDecrTest, MalformedDecrReturnsMonostate)
+{
+    // length mismatch for bulk string (declares 5 but provides 3 chars "key") -> invalid
+    std::string msg =
+        "*2\r\n"
+        "$4\r\nDECR\r\n"
+        "$5\r\nkey\r\n";
+
+    auto result = RespParser::parse(msg);
+    ASSERT_NE(result, nullptr);
+
+    // Parser should signal invalid input with monostate
     EXPECT_TRUE(std::holds_alternative<std::monostate>(result->value));
 }

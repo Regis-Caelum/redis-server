@@ -7,4 +7,6 @@ const std::unordered_map<std::string, CommandBuilder::CommandCreator> CommandBui
     {"QUIT", createQuitCommand},
     {"EXISTS", createExistsCommand},
     {"DEL", createDeleteCommand},
+    {"INCR", createIncrementCommand},
+    {"DECR", createDecrementCommand},
 };
